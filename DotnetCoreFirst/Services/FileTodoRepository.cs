@@ -1,6 +1,7 @@
 ﻿using DotnetCoreFirst.Interfaces;
 using DotnetCoreFirst.Models;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -12,22 +13,28 @@ namespace DotnetCoreFirst.Services
 {
     public class FileTodoRepository : ITodoRepository
     {
-
+        private readonly ILogger<FileTodoRepository> logger;
         private string path = default;
 
-        public FileTodoRepository(IWebHostEnvironment hostingEnvironment)
+        public FileTodoRepository(
+            IWebHostEnvironment hostingEnvironment,
+            ILogger<FileTodoRepository> logger
+        )
         {
             path = Path.Join(hostingEnvironment.ContentRootPath, "Assets", "Todos.json");
+            this.logger = logger;
         }
 
         public async Task AddAsync(TodoItem item)
         {
+            logger.LogInformation("Adding item started '{itemId}'", item.Id.ToString());
             string fileContents = await File.ReadAllTextAsync(path);
             List<TodoItem> todos = JsonConvert.DeserializeObject<List<TodoItem>>(fileContents);
             todos.Add(item);
 
             string updatedFileContents = JsonConvert.SerializeObject(todos);
             await File.WriteAllTextAsync(path, updatedFileContents);
+            logger.LogInformation("Adding item completed '{itemId}'", item.Id.ToString());
         }
 
         public async Task DeleteAsync(Guid id)
